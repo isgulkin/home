@@ -1,0 +1,2 @@
+[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-f059dc9a6f8d3a56e377f745f24479a46679e63a5d9fe6f495e02850cd0d8118.svg)](https://classroom.github.com/online_ide?assignment_repo_id=6514112&assignment_repo_type=AssignmentRepo)
+Дан массив цифр. Нужно составить из этих цифр два числа таких, что их сумма минимальна. На выход выдать эту сумму. Каждая цифра из массива должна использоваться ровно 1 раз. Например, `min_digits_sum([1,2,3])` = 12 + 3 = 15, а `min_digits_sum([3,2,1,4,5,6,9,8,7,0])` = 16047
