@@ -17,7 +17,7 @@ def find_sx(polynomial: galois.Poly,
                 polynomial_terms.append(coefficient * element ** polynomial_degrees[i])
 
         print('S(' + str(element) + ") = v(" + str(element) + ") =",
-              ' + '.join(map(str, polynomial_terms)), '=', polynomial_value, end=' ')
+              ' + '.join(map(str, polynomial_terms)), '=', end=' ')
 
         print(*['[' + power_to_int.get(i.__str__(), '0') + ']'
                 for i in polynomial_terms], sep=" + ", end=" = " + str(polynomial_value) + "\n")
@@ -63,7 +63,31 @@ def foo(ob):
 
 p, m, t = 2, 3, 3
 
-GaloisField = galois.GF(p ** m, irreducible_poly='x^3+x^2+1', repr='power')
+print('--------------------------------------------------------------------')
+
+print('Циклотомические классы:')
+K_0 = {'α^0'}
+K_1 = {'α, α^2, α^4'}
+K_2 = {'α^0'}
+cyclotomic_classes = {'K_0': 'α^0', 'K_1': 'α, α^2, α^4', 'K_2': 'α^3, α^5, α^6'}
+for keys, values in cyclotomic_classes.items():
+    print(str(keys) + ' = {' + str(values) + '}')
+
+print('--------------------------------------------------------------------')
+
+print('Нахождение g(x):')
+
+bch = galois.BCH(n=7, d=7)
+
+GaloisField = galois.GF(p ** m, irreducible_poly='x^3+x+1', repr='power')
+
+g = galois.Poly([1], field=GaloisField)
+
+for i in bch.roots:
+    el = galois.Poly([1, i], field=GaloisField)
+    print(f'({g})', '*', f'({el})', end='= ')
+    g *= el
+    print(g)
 
 power_reprs = [i.__str__() for i in GaloisField.elements][1:]
 
@@ -74,13 +98,35 @@ for i in range(len(power_reprs)):
     power_to_int[power_reprs[i]] = int_reprs[i]
     int_to_power[int_reprs[i]] = power_reprs[i]
 
+GaloisField.repr('poly')
+pol_view = [i.__str__() for i in GaloisField.elements][1:]
+GaloisField.repr('power')
+prim_str = []
+
+for i in range(len(power_reprs)):
+    prim_str.append(power_reprs[i] + ' = ' + pol_view[i] + ' = ' + int_reprs[i])
+
+prim_str.sort()
+print('--------------------------------------------------------------------')
+print('Нахождение элементов поля Галуа:\n')
+
+for i in prim_str:
+    print(i)
+
 elements = sorted(GaloisField.elements, key=lambda x: x.__str__())
 
-v_ = galois.Poly([1, 1, 1], field=GaloisField)
+u = int(input('Введите 0 или 1 в зависимости от данного слова u: '))
+print('Закодированный вектор u:')
+print(bch.encode([u]))
+
+input_str = 'Введите v\' вектор с 3 ошибками длинной 7, вида: 0111010, что будет значить x^6 + x^5 + x^3 + x.\n' \
+            'ВНИМАНИЕ!!! Строка читается справа налево: '
+v_input = list(map(int, input(input_str)))
+v_ = galois.Poly(v_input, field=GaloisField)
 
 print('--------------------------------------------------------------------')
 
-print('Найдём все S(x)\n')
+print('Найдём все S(x):\n')
 
 GaloisField.repr('power')
 Sx = find_sx(v_, elements[1:])
@@ -91,11 +137,11 @@ matrix = np.array([[1, 0, 0],
                    [Sx[2], Sx[1], 1],
                    [Sx[4], Sx[3], Sx[2]]])
 
-print('Получившаяся матрица\n\n', GaloisField(matrix))
+print('Получившаяся матрица:\n', GaloisField(matrix))
 
 print('--------------------------------------------------------------------')
 
-print('Решения матричного уравнения')
+print('Решения матричного уравнения:')
 
 matrix_x = np.array([Sx[1], Sx[3], Sx[5]])
 x = np.linalg.solve(GaloisField(matrix), GaloisField(matrix_x))
@@ -119,5 +165,3 @@ print('\nВектор ошибок(ещё надо найти обратные �
 
 error_vector = [element ** -1 for element in inverse_elements]
 print('Вектор ошибок, в котором степени элементов α -- места ошибок:', *error_vector)
-
-

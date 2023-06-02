@@ -83,6 +83,10 @@ for i in range(len(power_reprs)):
     power_to_int[power_reprs[i]] = int_reprs[i]
     int_to_power[int_reprs[i]] = power_reprs[i]
 
+power_to_int = dict(sorted(power_to_int.items()))
+for key, value in power_to_int.items():
+    print(str(key) + ' = [' + str(value) + ']')
+
 elements = sorted(GaloisField.elements, key=lambda x: x.__str__())
 
 print('--------------------------------------------------------------------')
