@@ -75,19 +75,11 @@ for keys, values in cyclotomic_classes.items():
 
 print('--------------------------------------------------------------------')
 
-print('Нахождение g(x):')
-
 bch = galois.BCH(n=7, d=7)
 
 GaloisField = galois.GF(p ** m, irreducible_poly='x^3+x+1', repr='power')
 
 g = galois.Poly([1], field=GaloisField)
-
-for i in bch.roots:
-    el = galois.Poly([1, i], field=GaloisField)
-    print(f'({g})', '*', f'({el})', end='= ')
-    g *= el
-    print(g)
 
 power_reprs = [i.__str__() for i in GaloisField.elements][1:]
 
@@ -107,11 +99,23 @@ for i in range(len(power_reprs)):
     prim_str.append(power_reprs[i] + ' = ' + pol_view[i] + ' = ' + int_reprs[i])
 
 prim_str.sort()
-print('--------------------------------------------------------------------')
-print('Нахождение элементов поля Галуа:\n')
+
+print('Нахождение элементов поля Галуа по неприводимомому многочлену x^3+x+1:\n')
 
 for i in prim_str:
     print(i)
+
+print('--------------------------------------------------------------------')
+
+print('Нахождение g(x):')
+for i in bch.roots:
+    el = galois.Poly([1, i], field=GaloisField)
+    print(f'({g})', '*', f'({el})', end='= ')
+    g *= el
+    print(g)
+
+print('--------------------------------------------------------------------')
+
 
 elements = sorted(GaloisField.elements, key=lambda x: x.__str__())
 
