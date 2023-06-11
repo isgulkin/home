@@ -1,27 +1,40 @@
-from itertools import combinations
+from typing import Union
 import numpy as np
+from itertools import combinations
+import time
 
 n, k = map(int, input('n k\n').split())
+f = 2
 
 
-def make_G(P, k):
-    G = np.hstack((np.eye(k), P))
-    return G.astype(int)
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"Время выполнения функции {func.__name__}: {end_time - start_time:.5f} секунд")
+        return result
+
+    return wrapper
 
 
-P_list = []
+def canonical_matrix(p: np.array, k: int) -> np.array:
+    return np.hstack((np.identity(k, dtype=int), p))
+
+
+p_list = []
 for i in range(k):
-    P_list.append(np.vectorize(int)([i for i in input(f'{i + 1} строка\n')]))
-P = np.concatenate([P_list])
-G = make_G(P, k)
+    p_list.append(np.vectorize(int)([i for i in input(f'{i + 1} строка\n')]))
+
+p = np.concatenate([p_list])
+g = canonical_matrix(p, k)
+
 u = np.vectorize(int)([i for i in input(f'введите слово-вектор для кодировки длинной k\n')])
 
 
-def make_H(G):
-    k, n = G.shape
-    P = G[:, k:]
-    H = np.hstack((-P.T % 2, np.eye(n - k)))
-    return H.astype(int)
+def check_matrix(g: np.array, field: int) -> np.array:
+    k, n = g.shape
+    return np.hstack((np.mod(-g[:, k:].T, field), np.identity(n - k, dtype=int)), dtype=int)
 
 
 def generate_new_error_vector(table):
@@ -50,14 +63,6 @@ def generate_table(g: np.array) -> np.array:
     return table
 
 
-def decode_slepian(v, table, q):
-    n, k = table.shape[0:2]
-    for i in range(n):
-        for j in range(k):
-            if np.array_equal(v, table[i][j]):
-                return (v - table[i][0]) % q
-
-
 def generate_syndrome_table(table, H):
     syndrome_table = []
     for line in table:
@@ -67,37 +72,49 @@ def generate_syndrome_table(table, H):
     return np.array(syndrome_table, dtype=object)
 
 
-def decode_syndrome(v, G, table, q):
-    H = make_H(G)
-    s = v @ H.T % q
+@timer
+def decode_syndrome(table: np.array, vector: np.array, g: np.array, field) -> Union[str, np.array]:
+    h = check_matrix(g, field)
+    s = np.mod(vector @ h.T, field)
     if np.count_nonzero(s) == 0:
-        return v
-    for line in table:
-        if np.array_equal(s, line[0] @ H.T % q):
-            weight_line = list(map(np.count_nonzero, line))
-            l = weight_line[0]
-            e = line[0]
-            for i in range(1, len(weight_line)):
-                if weight_line[i] <= l:
-                    return 'отказ от декодирования'
-            return (v - e) % q
+        return vector
+
+    syndrome_products = np.mod(table[:, 0] @ h.T, field)
+    matched_indices = np.where(np.all(s == syndrome_products, axis=-1))[0]
+
+    if matched_indices.size == 0:
+        return 'Отказ от декодирования'
+
+    matched_line = table[matched_indices[0]]
+    weight_line = np.count_nonzero(matched_line, axis=1)
+    min_weight = weight_line[0]
+    e = matched_line[0]
+
+    if np.any(weight_line[1:] <= min_weight):
+        return 'Отказ от декодирования'
+
+    return np.mod(vector - e, field)
 
 
-H = make_H(G)
-print('H.T\n', H.T)
-print('H\n', H)
-table = generate_table(G)
-print('таблица стандартного расположения')
+h = check_matrix(g, f)
+print('H.T\n', h.T)
+print('H\n', h)
+
+table = generate_table(g)
+print('Таблица стандартного расположения')
 for line in table:
     for el in line:
         print(el, end='')
     print('\n')
-print('таблица синдромов')
-syn_table = generate_syndrome_table(table, H)
+
+print('Таблица синдромов')
+syn_table = generate_syndrome_table(table, h)
 for line in syn_table:
     for el in line:
         print(el, end='')
     print('\n')
-print('закодированное сообщение', u @ G % 2)
+
+print('Закодированное сообщение', np.mod(u @ g, 2))
+
 noised = np.vectorize(int)([i for i in input('Введите вектор с ошибкой длинной n\n')])
-print('Синдром зашумленного сообщения', noised @ H.T % 2)
+print('Синдром зашумленного сообщения', np.mod(noised @ h.T, 2))
