@@ -1,2 +1,4 @@
-fortesto/
 .idea/
+test/*
+!test/.gitkeep
+venv
