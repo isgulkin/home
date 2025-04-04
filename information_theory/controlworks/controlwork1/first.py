@@ -50,10 +50,10 @@ def generate_new_error_vector(table):
     return None
 
 
-def generate_table(g: np.array) -> np.array:
-    k, n = g.shape
+def generate_table(gigant: np.array) -> np.array:
+    k, n = gigant.shape
     all_vectors = np.stack(np.meshgrid(*[range(2) for _ in range(k)])).T.reshape(-1, k)
-    syndrome_vectors = np.mod(all_vectors @ g, 2)
+    syndrome_vectors = np.mod(all_vectors @ gigant, 2)
     line = syndrome_vectors.reshape(2 ** k, n)
     table = np.array([line])
     error_vector = generate_new_error_vector(table)
