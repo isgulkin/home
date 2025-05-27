@@ -1,0 +1,29 @@
+.scan-image:
+  stage: ScanImage
+  image:
+    name: aquasec/trivy:0.50.1
+    entrypoint: [""]
+    pull_policy: if-not-present
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^release([-_0-9.\/]+|)$/'
+      allow_failure: false
+  variables:
+    GIT_STRATEGY: none
+    TRIVY_NO_PROGRESS: 'true'
+    TRIVY_CACHE_DIR: /.trivycache
+    TRIVY_AUTH_URL: "$CI_REGISTRY"
+    TRIVY_USERNAME: $CI_REGISTRY_USER
+    TRIVY_PASSWORD: $CI_REGISTRY_PASSWORD
+    FULL_IMAGE_NAME: $CI_REGISTRY/$CI_PROJECT_PATH:${CI_PIPELINE_ID}__${CI_COMMIT_REF_SLUG}__${CI_COMMIT_SHORT_SHA}
+  script:
+    - trivy --version
+    - time trivy image --download-db-only --no-progress --cache-dir .trivycache/
+    - time trivy image --exit-code 0 --cache-dir .trivycache/ --no-progress --format template --template "@/contrib/gitlab.tpl" --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
+    - time trivy image --exit-code 1 --severity HIGH,CRITICAL "$FULL_IMAGE_NAME"
+  cache:
+    paths:
+      - .trivycache/
+  artifacts:
+    reports:
+      container_scanning: gl-container-scanning-report.json
+    expire_in: 90 days
